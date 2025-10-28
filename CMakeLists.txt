@@ -22,6 +22,9 @@ configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/assimp/contrib/zlib/zconf.h @ONLY)
 include_directories("${FIPS_PROJECT_BUILD_DIR}")
 
+# Disable zip tests
+set(CMAKE_DISABLE_TESTING ON)
+
 fips_begin_lib(assimp)
     add_definitions(-DASSIMP_BUILD_NO_OWN_ZLIB)
     add_definitions(-DASSIMP_BUILD_NO_IFC_IMPORTER)
@@ -51,6 +54,7 @@ fips_begin_lib(assimp)
     fips_src(assimp/contrib/rapidjson)
     fips_src(assimp/contrib/unzip)
     fips_src(assimp/contrib/utf8cpp)
+    fips_files(../zip/src/zip.c)
     fips_deps(zlib)
 
     if (FIPS_ANDROID)
