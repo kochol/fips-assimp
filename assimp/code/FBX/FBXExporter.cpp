@@ -409,16 +409,16 @@ void FBXExporter::WriteGlobalSettings ()
     gs.AddChild("Version", int32_t(1000));
 
     FBX::Node p("Properties70");
-    p.AddP70int("UpAxis", 1);
+    p.AddP70int("UpAxis", 2);
     p.AddP70int("UpAxisSign", 1);
-    p.AddP70int("FrontAxis", 2);
+    p.AddP70int("FrontAxis", 1);
     p.AddP70int("FrontAxisSign", 1);
-    p.AddP70int("CoordAxis", 0);
+    p.AddP70int("CoordAxis", 1);
     p.AddP70int("CoordAxisSign", 1);
-    p.AddP70int("OriginalUpAxis", 1);
+    p.AddP70int("OriginalUpAxis", 2);
     p.AddP70int("OriginalUpAxisSign", 1);
     p.AddP70double("UnitScaleFactor", 1.0);
-    p.AddP70double("OriginalUnitScaleFactor", 1.0);
+    p.AddP70double("OriginalUnitScaleFactor", 0.01);
     p.AddP70color("AmbientColor", 0.0, 0.0, 0.0);
     p.AddP70string("DefaultCamera", "Producer Perspective");
     p.AddP70enum("TimeMode", 11);
