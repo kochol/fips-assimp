@@ -167,6 +167,24 @@ struct aiCamera
      */
     float mAspect;
 
+    /** Name of the node to use as look-at target.
+     *
+     * If set (non-empty), the camera should look at the position
+     * of this node instead of using the static mLookAt vector.
+     * This allows the look-at target to be animated through the
+     * node's transformation. The default value is an empty string.
+     */
+    C_STRUCT aiString mLookAtNode;
+
+    /** Name of the node to use for the up vector.
+     *
+     * If set (non-empty), the camera should use the position of
+     * this node to calculate the up vector instead of using the
+     * static mUp vector. This allows the up vector to be animated
+     * through the node's transformation. The default value is an empty string.
+     */
+    C_STRUCT aiString mUpVectorNode;
+
 #ifdef __cplusplus
 
     aiCamera() AI_NO_EXCEPT
@@ -208,6 +226,66 @@ struct aiCamera
 
         out.d1 = out.d2 = out.d3 = 0.f;
         out.d4 = 1.f;
+    }
+
+    // Checks if a look-at node is set
+    bool HasLookAtNode() const
+    {
+        return mLookAtNode.length > 0;
+    }
+
+    // Checks if an up vector node is set
+    bool HasUpVectorNode() const
+    {
+        return mUpVectorNode.length > 0;
+    }
+
+    // Sets the name of the node to use as look-at target
+    void SetLookAtNode(const aiString& nodeName)
+    {
+        mLookAtNode = nodeName;
+    }
+
+    // Sets the name of the node to use as look-at target
+    void SetLookAtNode(const char* nodeName)
+    {
+        mLookAtNode.Set(nodeName);
+    }
+
+    // Sets the name of the node to use for the up vector
+    void SetUpVectorNode(const aiString& nodeName)
+    {
+        mUpVectorNode = nodeName;
+    }
+
+    // Sets the name of the node to use for the up vector
+    void SetUpVectorNode(const char* nodeName)
+    {
+        mUpVectorNode.Set(nodeName);
+    }
+
+    // Gets the name of the look-at node
+    const aiString& GetLookAtNode() const
+    {
+        return mLookAtNode;
+    }
+
+    // Gets the name of the up vector node
+    const aiString& GetUpVectorNode() const
+    {
+        return mUpVectorNode;
+    }
+
+    // Clears the look-at node reference
+    void ClearLookAtNode()
+    {
+        mLookAtNode.Clear();
+    }
+
+    // Clears the up vector node reference
+    void ClearUpVectorNode()
+    {
+        mUpVectorNode.Clear();
     }
 
 #endif

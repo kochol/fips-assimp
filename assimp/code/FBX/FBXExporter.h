@@ -61,6 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory> // shared_ptr
 #include <sstream> // stringstream
 
+struct aiCamera;
 struct aiScene;
 struct aiNode;
 //struct aiMaterial;
@@ -152,7 +153,8 @@ namespace Assimp
             int64_t node_uid,
             const std::string& type,
             const std::vector<std::pair<std::string,aiVector3D>>& xfm_chain,
-            FBX::TransformInheritance ti_type=FBX::TransformInheritance_RSrs
+            FBX::TransformInheritance ti_type=FBX::TransformInheritance_RSrs,
+            const aiCamera* camera=nullptr
         );
         void WriteAnimationCurveNode(
             StreamWriterLE& outstream,

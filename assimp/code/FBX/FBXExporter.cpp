@@ -2331,7 +2331,8 @@ void FBXExporter::WriteModelNode(
     int64_t node_uid,
     const std::string& type,
     const std::vector<std::pair<std::string,aiVector3D>>& transform_chain,
-    TransformInheritance inherit_type
+    TransformInheritance inherit_type,
+    const aiCamera* camera
 ){
     const aiVector3D zero = {0, 0, 0};
     const aiVector3D one = {1, 1, 1};
@@ -2343,6 +2344,18 @@ void FBXExporter::WriteModelNode(
     p.AddP70bool("RotationActive", 1);
     p.AddP70int("DefaultAttributeIndex", 0);
     p.AddP70enum("InheritType", inherit_type);
+
+    if (camera != nullptr)
+    {
+        if (camera->HasLookAtNode())
+        {
+            p.AddP70("LookAtProperty", "object", "", "");
+        }
+        if (camera->HasUpVectorNode())
+        {
+            p.AddP70("UpVectorProperty", "object", "", "");
+        }
+    }
     if (transform_chain.empty()) {
         // decompose 4x4 transform matrix into TRS
         aiVector3D t, r, s;
@@ -2498,13 +2511,60 @@ void FBXExporter::WriteModelNodes(
         // handled later
     } else if (camera_index != -1) {
         // this node has a camera
+        const aiCamera* cam = mScene->mCameras[camera_index];
         connections.emplace_back(
             "C", "OO", camera_uids[camera_index], node_uid
         );
         // write model node
         WriteModelNode(
-            outstream, binary, node, node_uid, "Camera", transform_chain
+            outstream, binary, node, node_uid, "Camera", transform_chain,
+            TransformInheritance_RSrs, cam
         );
+
+        // check for look-at and up-vector nodes
+        if (cam->HasLookAtNode())
+        {
+            const aiNode* lookAtNode = mScene->mRootNode->FindNode(cam->GetLookAtNode());
+            if (lookAtNode != nullptr)
+            {
+                int64_t target_uid;
+                auto elem = node_uids.find(lookAtNode);
+                if (elem != node_uids.end())
+                {
+                    target_uid = elem->second;
+                }
+                else
+                {
+                    target_uid = generate_uid();
+                    node_uids[lookAtNode] = target_uid;
+                }
+                connections.emplace_back(
+                    "C", "OP", target_uid, node_uid, "LookAtProperty"
+                );
+            }
+        }
+
+        if (cam->HasUpVectorNode())
+        {
+            const aiNode* upVectorNode = mScene->mRootNode->FindNode(cam->GetUpVectorNode());
+            if (upVectorNode != nullptr)
+            {
+                int64_t target_uid;
+                auto elem = node_uids.find(upVectorNode);
+                if (elem != node_uids.end())
+                {
+                    target_uid = elem->second;
+                }
+                else
+                {
+                    target_uid = generate_uid();
+                    node_uids[upVectorNode] = target_uid;
+                }
+                connections.emplace_back(
+                    "C", "OP", target_uid, node_uid, "UpVectorProperty"
+                );
+            }
+        }
     } else if (node->mNumMeshes == 1) {
         // connect to child mesh, which should have been written previously
         connections.emplace_back(
