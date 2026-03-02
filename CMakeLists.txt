@@ -29,16 +29,6 @@ fips_begin_lib(assimp)
     add_definitions(-DASSIMP_BUILD_NO_OWN_ZLIB)
     add_definitions(-DASSIMP_BUILD_NO_IFC_IMPORTER)
     add_definitions(-DASSIMP_BUILD_NO_STEP_IMPORTER)
-    fips_include_directories(.)
-    fips_include_directories(assimp/)
-    fips_include_directories(assimp/code)
-    fips_include_directories(assimp/include)
-    fips_include_directories(assimp/code/BoostWorkaround)
-    fips_include_directories(assimp/contrib/openddlparser/include/)
-    fips_include_directories(assimp/contrib/rapidjson/include/)
-    fips_include_directories(assimp/contrib/unzip/)
-    fips_include_directories(assimp/contrib/irrXML/)
-    fips_include_directories("${FIPS_PROJECT_BUILD_DIR}")
 
     fips_dir(.)
     fips_files(revision.h)
@@ -79,6 +69,19 @@ fips_begin_lib(assimp)
     endif()
 fips_end_lib()
 
+target_include_directories(assimp PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/code
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/code/BoostWorkaround
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/contrib/openddlparser/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/contrib/rapidjson/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/contrib/unzip/
+    ${CMAKE_CURRENT_SOURCE_DIR}/assimp/contrib/irrXML/
+    ${FIPS_PROJECT_BUILD_DIR}
+)
+
 if (FIPS_CLANG)
     set_target_properties(assimp PROPERTIES COMPILE_FLAGS "-Wno-sign-compare -Wno-deprecated-declarations -Wno-unused-function -Wno-unused-variable -Wno-reorder -fexceptions -frtti")
 elseif(FIPS_GCC)
@@ -90,7 +93,6 @@ endif()
 if (NOT FIPS_IMPORT)
     gtest_begin(assimp NO_TEMPLATE)
         add_definitions(-DASSIMP_TEST_MODELS_DIR="${FIPS_PROJECT_DIR}/assimp/test/models")
-        fips_include_directories(assimp/test/unit)
         fips_src(assimp/test/unit EXCEPT
             # Some excluded are because compiler error
             utExport.cpp utNoBoostTest.cpp
@@ -103,6 +105,8 @@ if (NOT FIPS_IMPORT)
         fips_files(Version.cpp)
         fips_deps(assimp)
     gtest_end()
+
+    target_include_directories(assimpTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/assimp/test/unit)
 
     if (FIPS_CLANG)
         set_target_properties(assimpTest PROPERTIES COMPILE_FLAGS "-Wno-sign-compare -Wno-deprecated-declarations -Wno-unused-function -Wno-unused-variable -Wno-reorder -fexceptions -frtti")

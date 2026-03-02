@@ -400,6 +400,8 @@ void FBXExporter::WriteHeaderExtension ()
     );
 }
 
+int64_t to_ktime(double ticks);
+
 void FBXExporter::WriteGlobalSettings ()
 {
     if (!binary) {
@@ -424,8 +426,21 @@ void FBXExporter::WriteGlobalSettings ()
     p.AddP70enum("TimeMode", 11);
     p.AddP70enum("TimeProtocol", 2);
     p.AddP70enum("SnapOnFrameMode", 0);
-    p.AddP70time("TimeSpanStart", 0); // TODO: animation support
-    p.AddP70time("TimeSpanStop", FBX::SECOND); // TODO: animation support
+    // Compute time span from animation duration
+    int64_t time_span_stop = FBX::SECOND;
+    if (mScene && mScene->mNumAnimations > 0)
+    {
+        double max_duration = 0;
+        for (unsigned int i = 0; i < mScene->mNumAnimations; ++i)
+        {
+            if (mScene->mAnimations[i]->mDuration > max_duration)
+                max_duration = mScene->mAnimations[i]->mDuration;
+        }
+        if (max_duration > 0)
+            time_span_stop = to_ktime(max_duration);
+    }
+    p.AddP70time("TimeSpanStart", 0);
+    p.AddP70time("TimeSpanStop", time_span_stop);
     p.AddP70double("CustomFrameRate", -1.0);
     p.AddP70("TimeMarker", "Compound", "", ""); // not sure what this is
     p.AddP70int("CurrentTimeMarker", -1);
@@ -439,7 +454,7 @@ void FBXExporter::WriteDocuments ()
     if (!binary) {
         WriteAsciiSectionHeader("Documents Description");
     }
-    
+
     // not sure what the use of multiple documents would be,
     // or whether any end-application supports it
     FBX::Node docs("Documents");
@@ -1178,7 +1193,7 @@ void FBXExporter::WriteObjects ()
             indent = 2;
             vertexcolors.End(outstream, binary, indent, true);
         }
-        
+
         // uvs, if any
         for (size_t uvi = 0; uvi < m->GetNumUVChannels(); ++uvi) {
             if (m->mNumUVComponents[uvi] > 2) {
@@ -1695,7 +1710,7 @@ void FBXExporter::WriteObjects ()
     // at the same time we can build a list of all the skeleton nodes,
     // which will be used later to mark them as type "limbNode".
     std::unordered_set<const aiNode*> limbnodes;
-    
+
     //actual bone nodes in fbx, without parenting-up
     std::unordered_set<std::string> setAllBoneNamesInScene;
     for(unsigned int m = 0; m < mScene->mNumMeshes; ++ m)
@@ -1705,7 +1720,7 @@ void FBXExporter::WriteObjects ()
             setAllBoneNamesInScene.insert(pMesh->mBones[b]->mName.data);
     }
     aiMatrix4x4 mxTransIdentity;
-    
+
     // and a map of nodes by bone name, as finding them is annoying.
     std::map<std::string,aiNode*> node_by_bone;
     for (size_t mi = 0; mi < mScene->mNumMeshes; ++mi) {
@@ -1774,7 +1789,7 @@ void FBXExporter::WriteObjects ()
                     }
                     if (end) { break; }
                 }
-                
+
                 // if it was the skeleton root we can finish here
                 if (end) { break; }
             }
@@ -2157,9 +2172,9 @@ void FBXExporter::WriteObjects ()
         asnode.AddProperties(animstack_uid, name, "");
         FBX::Node p("Properties70");
         p.AddP70time("LocalStart", 0); // assimp doesn't store this
-        p.AddP70time("LocalStop", to_ktime(anim->mDuration, anim));
+        p.AddP70time("LocalStop", to_ktime(anim->mDuration));
         p.AddP70time("ReferenceStart", 0);
-        p.AddP70time("ReferenceStop", to_ktime(anim->mDuration, anim));
+        p.AddP70time("ReferenceStop", to_ktime(anim->mDuration));
         asnode.AddChild(p);
 
         // this node absurdly always pretends it has children
