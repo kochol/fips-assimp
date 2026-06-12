@@ -2238,7 +2238,7 @@ void FBXExporter::WriteObjects ()
 
             // scale
             WriteAnimationCurveNode(outstream,
-                ids[2], "S", S, "Lcl Scale",
+                ids[2], "S", S, "Lcl Scaling",
                 layer_uid, node_uids[node]
             );
 
