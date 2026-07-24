@@ -1225,6 +1225,15 @@ void SceneCombiner::Copy( aiCamera** _dest,const  aiCamera* src) {
 
     // get a flat copy, that's already OK
     ::memcpy(dest,src,sizeof(aiCamera));
+
+    // the roll keys are owned, so they need one of their own
+    dest->mRollKeys = nullptr;
+    dest->mNumRollKeys = 0;
+    if (src->mNumRollKeys && src->mRollKeys) {
+        dest->mNumRollKeys = src->mNumRollKeys;
+        dest->mRollKeys = new aiCameraRollKey[src->mNumRollKeys];
+        ::memcpy(dest->mRollKeys, src->mRollKeys, src->mNumRollKeys * sizeof(aiCameraRollKey));
+    }
 }
 
 // ------------------------------------------------------------------------------------------------

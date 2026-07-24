@@ -165,6 +165,14 @@ namespace Assimp
             int64_t animation_layer_uid,
             int64_t node_uid
         );
+        void WriteScalarAnimationCurveNode(
+            StreamWriterLE& outstream,
+            int64_t uid,
+            const std::string& property_name, // "Roll", "FieldOfView" etc
+            double default_value,
+            int64_t animation_layer_uid,
+            int64_t object_uid
+        );
         void WriteAnimationCurve(
             StreamWriterLE& outstream,
             double default_value,

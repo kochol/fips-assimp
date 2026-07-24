@@ -96,6 +96,25 @@ extern "C" {
  * camera already look in the right direction.
  *
 */
+/** A single roll key of a camera, the roll in radians at a point in time. */
+struct aiCameraRollKey
+{
+    double mTime;
+    float mValue;
+
+#ifdef __cplusplus
+    aiCameraRollKey() AI_NO_EXCEPT
+        : mTime(0.0)
+        , mValue(0.f)
+    {}
+
+    aiCameraRollKey(double _time, float _value)
+        : mTime(_time)
+        , mValue(_value)
+    {}
+#endif
+};
+
 struct aiCamera
 {
     /** The name of the camera.
@@ -185,6 +204,24 @@ struct aiCamera
      */
     C_STRUCT aiString mUpVectorNode;
 
+    /** Roll around the viewing direction, in radians.
+     *
+     * Applied on top of the orientation the camera node carries.
+     * A camera that aims at mLookAtNode has no roll of its own, so this
+     * is the only way to twist it. The default value is 0.
+     */
+    float mRoll;
+
+    /** Number of roll keys, 0 if the roll does not animate. */
+    unsigned int mNumRollKeys;
+
+    /** Roll over time, replacing mRoll while the animation plays.
+     *
+     * The keys belong to the first animation of the scene and their
+     * times are in the same units as the other animation channels.
+     */
+    C_STRUCT aiCameraRollKey* mRollKeys;
+
 #ifdef __cplusplus
 
     aiCamera() AI_NO_EXCEPT
@@ -194,7 +231,15 @@ struct aiCamera
         , mClipPlaneNear    (0.1f)
         , mClipPlaneFar     (1000.f)
         , mAspect           (0.f)
+        , mRoll             (0.f)
+        , mNumRollKeys      (0)
+        , mRollKeys         (nullptr)
     {}
+
+    ~aiCamera()
+    {
+        delete[] mRollKeys;
+    }
 
     /** @brief Get a *right-handed* camera matrix from me
      *  @param out Camera matrix to be filled

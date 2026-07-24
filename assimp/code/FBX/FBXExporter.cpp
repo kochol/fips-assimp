@@ -2097,7 +2097,7 @@ void FBXExporter::WriteObjects ()
         p.AddP70vector("Position", cam->mPosition.x, cam->mPosition.y, cam->mPosition.z);
         p.AddP70vector("UpVector", cam->mUp.x, cam->mUp.y, cam->mUp.z);
         p.AddP70vector("InterestPosition", cam->mLookAt.x, cam->mLookAt.y, cam->mLookAt.z);
-        p.AddP70numberA("Roll", 0.0);
+        p.AddP70numberA("Roll", AI_RAD_TO_DEG(cam->mRoll));
         p.AddP70numberA("FieldOfView", AI_RAD_TO_DEG(cam->mHorizontalFOV));
         p.AddP70numberA("FieldOfViewX", AI_RAD_TO_DEG(cam->mHorizontalFOV));
         p.AddP70numberA("FieldOfViewY", AI_RAD_TO_DEG(cam->mHorizontalFOV));
@@ -2340,6 +2340,34 @@ void FBXExporter::WriteObjects ()
             WriteAnimationCurve(outstream, S.x, times, xval, ids[2], "d|X");
             WriteAnimationCurve(outstream, S.y, times, yval, ids[2], "d|Y");
             WriteAnimationCurve(outstream, S.z, times, zval, ids[2], "d|Z");
+        }
+    }
+
+    // Camera roll - a scalar curve on the camera attribute rather than the node.
+    // A camera aimed at a target gets its orientation from the aim, so this is
+    // the only twist it has. The keys go into the first animation layer.
+    if (mScene->mNumAnimations > 0) {
+        const int64_t layer_uid = animation_layer_uids[0];
+        for (size_t ci = 0; ci < mScene->mNumCameras; ++ci) {
+            const aiCamera* cam = mScene->mCameras[ci];
+            if (cam->mNumRollKeys == 0) { continue; }
+
+            std::vector<int64_t> times;
+            std::vector<float> values;
+            for (unsigned int ki = 0; ki < cam->mNumRollKeys; ++ki) {
+                times.push_back(to_ktime(cam->mRollKeys[ki].mTime));
+                values.push_back(float(AI_RAD_TO_DEG(cam->mRollKeys[ki].mValue)));
+            }
+
+            const double first_value = double(values[0]);
+            const int64_t curve_node_uid = generate_uid();
+            WriteScalarAnimationCurveNode(
+                outstream, curve_node_uid, "Roll", first_value,
+                layer_uid, camera_uids[ci]
+            );
+            WriteAnimationCurve(
+                outstream, first_value, times, values, curve_node_uid, "d|Roll"
+            );
         }
     }
 
@@ -2710,6 +2738,29 @@ void FBXExporter::WriteAnimationCurveNode(
     this->connections.emplace_back("C", "OO", uid, layer_uid);
     // connect to bone
     this->connections.emplace_back("C", "OP", uid, node_uid, property_name);
+}
+
+
+// Curve node for a single value property, where FBX names the inner property
+// d|<name> instead of the d|X, d|Y, d|Z a vector property uses
+void FBXExporter::WriteScalarAnimationCurveNode(
+    StreamWriterLE& outstream,
+    int64_t uid,
+    const std::string& property_name,
+    double default_value,
+    int64_t layer_uid,
+    int64_t object_uid
+) {
+    FBX::Node n("AnimationCurveNode");
+    n.AddProperties(uid, property_name + FBX::SEPARATOR + "AnimCurveNode", "");
+    FBX::Node p("Properties70");
+    p.AddP70numberA("d|" + property_name, default_value);
+    n.AddChild(p);
+    n.Dump(outstream, binary, 1);
+    // connect to layer
+    this->connections.emplace_back("C", "OO", uid, layer_uid);
+    // connect to the object that owns the property
+    this->connections.emplace_back("C", "OP", uid, object_uid, property_name);
 }
 
 
