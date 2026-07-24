@@ -402,6 +402,37 @@ void FBXExporter::WriteHeaderExtension ()
 
 int64_t to_ktime(double ticks);
 
+// Scene metadata overrides a global setting when the scene carries one.
+// The keys are the ones the FBX importer fills in, so a file can round trip.
+static int32_t scene_setting(const aiScene* scene, const char* key, int32_t fallback)
+{
+    int32_t value;
+    if (scene && scene->mMetaData && scene->mMetaData->Get(key, value)) {
+        return value;
+    }
+    return fallback;
+}
+
+static double scene_setting(const aiScene* scene, const char* key, double fallback)
+{
+    if (!scene || !scene->mMetaData) {
+        return fallback;
+    }
+
+    double value;
+    if (scene->mMetaData->Get(key, value)) {
+        return value;
+    }
+
+    // The importer stores some of these as floats
+    float float_value;
+    if (scene->mMetaData->Get(key, float_value)) {
+        return double(float_value);
+    }
+
+    return fallback;
+}
+
 void FBXExporter::WriteGlobalSettings ()
 {
     if (!binary) {
@@ -411,19 +442,19 @@ void FBXExporter::WriteGlobalSettings ()
     gs.AddChild("Version", int32_t(1000));
 
     FBX::Node p("Properties70");
-    p.AddP70int("UpAxis", 2);
-    p.AddP70int("UpAxisSign", 1);
-    p.AddP70int("FrontAxis", 1);
-    p.AddP70int("FrontAxisSign", 1);
-    p.AddP70int("CoordAxis", 1);
-    p.AddP70int("CoordAxisSign", 1);
-    p.AddP70int("OriginalUpAxis", 2);
-    p.AddP70int("OriginalUpAxisSign", 1);
-    p.AddP70double("UnitScaleFactor", 1.0);
-    p.AddP70double("OriginalUnitScaleFactor", 0.01);
+    p.AddP70int("UpAxis", scene_setting(mScene, "UpAxis", 2));
+    p.AddP70int("UpAxisSign", scene_setting(mScene, "UpAxisSign", 1));
+    p.AddP70int("FrontAxis", scene_setting(mScene, "FrontAxis", 1));
+    p.AddP70int("FrontAxisSign", scene_setting(mScene, "FrontAxisSign", 1));
+    p.AddP70int("CoordAxis", scene_setting(mScene, "CoordAxis", 1));
+    p.AddP70int("CoordAxisSign", scene_setting(mScene, "CoordAxisSign", 1));
+    p.AddP70int("OriginalUpAxis", scene_setting(mScene, "OriginalUpAxis", 2));
+    p.AddP70int("OriginalUpAxisSign", scene_setting(mScene, "OriginalUpAxisSign", 1));
+    p.AddP70double("UnitScaleFactor", scene_setting(mScene, "UnitScaleFactor", 1.0));
+    p.AddP70double("OriginalUnitScaleFactor", scene_setting(mScene, "OriginalUnitScaleFactor", 0.01));
     p.AddP70color("AmbientColor", 0.0, 0.0, 0.0);
     p.AddP70string("DefaultCamera", "Producer Perspective");
-    p.AddP70enum("TimeMode", 11);
+    p.AddP70enum("TimeMode", scene_setting(mScene, "FrameRate", 11));
     p.AddP70enum("TimeProtocol", 2);
     p.AddP70enum("SnapOnFrameMode", 0);
     // Compute time span from animation duration
@@ -441,7 +472,7 @@ void FBXExporter::WriteGlobalSettings ()
     }
     p.AddP70time("TimeSpanStart", 0);
     p.AddP70time("TimeSpanStop", time_span_stop);
-    p.AddP70double("CustomFrameRate", -1.0);
+    p.AddP70double("CustomFrameRate", scene_setting(mScene, "CustomFrameRate", -1.0));
     p.AddP70("TimeMarker", "Compound", "", ""); // not sure what this is
     p.AddP70int("CurrentTimeMarker", -1);
     gs.AddChild(p);
