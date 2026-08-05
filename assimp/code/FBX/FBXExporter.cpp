@@ -2421,6 +2421,12 @@ void FBXExporter::WriteModelNode(
 
     if (camera != nullptr)
     {
+        // A camera node holds the orientation in the frame the host app uses, which
+        // looks along -Z, while an FBX camera looks along its own +X. The post
+        // rotation is the step between the two, and the transform chain applies it
+        // inverted. Maya shows it as the camera's rotate axis.
+        p.AddP70vector("PostRotation", 0.0, -90.0, 0.0);
+
         if (camera->HasLookAtNode())
         {
             p.AddP70("LookAtProperty", "object", "", "");
